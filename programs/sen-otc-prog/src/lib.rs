@@ -18,8 +18,8 @@ pub mod sen_otc_prog {
 
   pub fn make_order(
     ctx: Context<MakeOrder>,
-    bid_amount: u64,
-    ask_amount: u64,
+    a: u64,
+    b: u64,
     maker_fee: u32,
     taker_fee: u32,
     start_date: i64,
@@ -27,7 +27,7 @@ pub mod sen_otc_prog {
     whitelist: [u8; 32],
   ) -> Result<()> {
     make_order::exec(
-      ctx, bid_amount, ask_amount, maker_fee, taker_fee, start_date, end_date, whitelist,
+      ctx, a, b, maker_fee, taker_fee, start_date, end_date, whitelist,
     )
   }
 

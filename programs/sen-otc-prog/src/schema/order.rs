@@ -21,10 +21,10 @@ impl Default for OrderState {
 #[account]
 pub struct Order {
   pub authority: Pubkey,
-  pub bid_token: Pubkey,
-  pub ask_token: Pubkey,
-  pub bid_amount: u64,
-  pub ask_amount: u64,
+  pub a_token: Pubkey,
+  pub b_token: Pubkey,
+  pub a: u64,
+  pub b: u64,
   pub remaining_amount: u64,
   pub filled_amount: u64,
   pub maker_fee: u32, // decimal 9
@@ -71,25 +71,22 @@ impl Order {
     child == self.whitelist
   }
 
-  pub fn compute_ask_amount(&self, bid_amount: u64) -> Option<u64> {
-    bid_amount
-      .to_u128()?
-      .checked_mul(self.ask_amount.to_u128()?)?
-      .checked_div(self.bid_amount.to_u128()?)?
+  pub fn compute_x(&self, y: u64) -> Option<u64> {
+    y.to_u128()?
+      .checked_mul(self.b.to_u128()?)?
+      .checked_div(self.a.to_u128()?)?
       .to_u64()
   }
 
-  pub fn compute_maker_fee(&self, ask_amount: u64) -> Option<u64> {
-    ask_amount
-      .to_u128()?
+  pub fn compute_maker_fee(&self, y: u64) -> Option<u64> {
+    y.to_u128()?
       .checked_mul(self.maker_fee.to_u128()?)?
       .checked_div(DECIMALS.to_u128()?)?
       .to_u64()
   }
 
-  pub fn compute_taker_fee(&self, bid_amount: u64) -> Option<u64> {
-    bid_amount
-      .to_u128()?
+  pub fn compute_taker_fee(&self, x: u64) -> Option<u64> {
+    x.to_u128()?
       .checked_mul(self.taker_fee.to_u128()?)?
       .checked_div(DECIMALS.to_u128()?)?
       .to_u64()

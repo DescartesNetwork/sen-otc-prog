@@ -8,10 +8,10 @@ use anchor_spl::{associated_token, token};
 pub struct MakeOrderEvent {
   pub order: Pubkey,
   pub authority: Pubkey,
-  pub bid_token: Pubkey,
-  pub ask_token: Pubkey,
-  pub bid_amount: u64,
-  pub ask_amount: u64,
+  pub a_token: Pubkey,
+  pub b_token: Pubkey,
+  pub a: u64,
+  pub b: u64,
   pub maker_fee: u32,
   pub taker_fee: u32,
   pub start_date: i64,
@@ -25,14 +25,14 @@ pub struct MakeOrder<'info> {
   pub authority: Signer<'info>,
   #[account(init, payer = authority, space = Order::LEN)]
   pub order: Account<'info, Order>,
-  pub bid_token: Account<'info, token::Mint>,
-  pub ask_token: Account<'info, token::Mint>,
+  pub a_token: Account<'info, token::Mint>,
+  pub b_token: Account<'info, token::Mint>,
   #[account(mut)]
-  pub src_bid_account: Account<'info, token::TokenAccount>,
+  pub src_a_account: Account<'info, token::TokenAccount>,
   #[account(
     init,
     payer = authority,
-    associated_token::mint = bid_token,
+    associated_token::mint = a_token,
     associated_token::authority = treasurer
   )]
   pub treasury: Account<'info, token::TokenAccount>,
@@ -48,8 +48,8 @@ pub struct MakeOrder<'info> {
 
 pub fn exec(
   ctx: Context<MakeOrder>,
-  bid_amount: u64,
-  ask_amount: u64,
+  a: u64,
+  b: u64,
   maker_fee: u32,
   taker_fee: u32,
   start_date: i64,
@@ -58,7 +58,7 @@ pub fn exec(
 ) -> Result<()> {
   let order = &mut ctx.accounts.order;
   // Validate bid amount
-  if bid_amount <= 0 || ask_amount <= 0 {
+  if a <= 0 || b <= 0 {
     return err!(ErrorCode::InvalidAmount);
   }
   // Validate datetime
@@ -72,20 +72,20 @@ pub fn exec(
   let transfer_ctx = CpiContext::new(
     ctx.accounts.token_program.to_account_info(),
     token::Transfer {
-      from: ctx.accounts.src_bid_account.to_account_info(),
+      from: ctx.accounts.src_a_account.to_account_info(),
       to: ctx.accounts.treasury.to_account_info(),
       authority: ctx.accounts.authority.to_account_info(),
     },
   );
-  token::transfer(transfer_ctx, bid_amount)?;
+  token::transfer(transfer_ctx, a)?;
 
   // Create order data
   order.authority = ctx.accounts.authority.key();
-  order.bid_token = ctx.accounts.bid_token.key();
-  order.ask_token = ctx.accounts.ask_token.key();
-  order.bid_amount = bid_amount;
-  order.ask_amount = ask_amount;
-  order.remaining_amount = bid_amount;
+  order.a_token = ctx.accounts.a_token.key();
+  order.b_token = ctx.accounts.b_token.key();
+  order.a = a;
+  order.b = b;
+  order.remaining_amount = a;
   order.filled_amount = 0;
   order.maker_fee = maker_fee;
   order.taker_fee = taker_fee;
@@ -97,10 +97,10 @@ pub fn exec(
   emit!(MakeOrderEvent {
     order: order.key(),
     authority: order.authority,
-    bid_token: order.bid_token,
-    ask_token: order.ask_token,
-    bid_amount: order.bid_amount,
-    ask_amount: order.ask_amount,
+    a_token: order.a_token,
+    b_token: order.b_token,
+    a: order.a,
+    b: order.b,
     maker_fee: order.maker_fee,
     taker_fee: order.taker_fee,
     start_date: order.start_date,

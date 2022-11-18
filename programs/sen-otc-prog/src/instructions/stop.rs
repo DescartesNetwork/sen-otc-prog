@@ -16,16 +16,16 @@ pub struct StopEvent {
 pub struct Stop<'info> {
   #[account(mut)]
   pub authority: Signer<'info>,
-  #[account(mut, has_one = authority, has_one = bid_token)]
+  #[account(mut, has_one = authority, has_one = a_token)]
   pub order: Account<'info, Order>,
-  pub bid_token: Box<Account<'info, token::Mint>>,
+  pub a_token: Box<Account<'info, token::Mint>>,
   #[account(
     init_if_needed,
     payer = authority,
-    associated_token::mint = bid_token,
+    associated_token::mint = a_token,
     associated_token::authority = authority
   )]
-  pub dst_bid_account: Box<Account<'info, token::TokenAccount>>,
+  pub dst_a_account: Box<Account<'info, token::TokenAccount>>,
   #[account(mut)]
   pub treasury: Box<Account<'info, token::TokenAccount>>,
   #[account(seeds = [b"treasurer", &order.key().to_bytes()], bump)]
@@ -53,7 +53,7 @@ pub fn exec(ctx: Context<Stop>) -> Result<()> {
     ctx.accounts.token_program.to_account_info(),
     token::Transfer {
       from: ctx.accounts.treasury.to_account_info(),
-      to: ctx.accounts.dst_bid_account.to_account_info(),
+      to: ctx.accounts.dst_a_account.to_account_info(),
       authority: ctx.accounts.treasurer.to_account_info(),
     },
     seeds,
