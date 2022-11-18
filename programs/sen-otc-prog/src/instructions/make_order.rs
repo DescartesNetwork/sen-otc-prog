@@ -12,8 +12,8 @@ pub struct MakeOrderEvent {
   pub ask_token: Pubkey,
   pub bid_amount: u64,
   pub ask_amount: u64,
-  pub maker_fee: u64,
-  pub taker_fee: u64,
+  pub maker_fee: u32,
+  pub taker_fee: u32,
   pub start_date: i64,
   pub end_date: i64,
   pub whitelist: [u8; 32],
@@ -25,17 +25,17 @@ pub struct MakeOrder<'info> {
   pub authority: Signer<'info>,
   #[account(init, payer = authority, space = Order::LEN)]
   pub order: Account<'info, Order>,
-  pub bid_token: Box<Account<'info, token::Mint>>,
-  pub ask_token: Box<Account<'info, token::Mint>>,
+  pub bid_token: Account<'info, token::Mint>,
+  pub ask_token: Account<'info, token::Mint>,
   #[account(mut)]
-  pub src_bid_account: Box<Account<'info, token::TokenAccount>>,
+  pub src_bid_account: Account<'info, token::TokenAccount>,
   #[account(
     init,
     payer = authority,
     associated_token::mint = bid_token,
     associated_token::authority = treasurer
   )]
-  pub treasury: Box<Account<'info, token::TokenAccount>>,
+  pub treasury: Account<'info, token::TokenAccount>,
   #[account(seeds = [b"treasurer", &order.key().to_bytes()], bump)]
   /// CHECK: Just a pure account
   pub treasurer: AccountInfo<'info>,
@@ -50,8 +50,8 @@ pub fn exec(
   ctx: Context<MakeOrder>,
   bid_amount: u64,
   ask_amount: u64,
-  maker_fee: u64,
-  taker_fee: u64,
+  maker_fee: u32,
+  taker_fee: u32,
   start_date: i64,
   end_date: i64,
   whitelist: [u8; 32],

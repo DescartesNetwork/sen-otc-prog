@@ -27,8 +27,8 @@ pub struct Order {
   pub ask_amount: u64,
   pub remaining_amount: u64,
   pub filled_amount: u64,
-  pub maker_fee: u64, // decimal 9
-  pub taker_fee: u64, // decimal 9
+  pub maker_fee: u32, // decimal 9
+  pub taker_fee: u32, // decimal 9
   pub start_date: i64,
   pub end_date: i64,
   pub whitelist: [u8; 32],
@@ -40,9 +40,15 @@ impl Order {
     + PUBKEY_SIZE
     + PUBKEY_SIZE
     + PUBKEY_SIZE
+    + U64_SIZE
+    + U64_SIZE
+    + U64_SIZE
+    + U64_SIZE
+    + U32_SIZE
     + U32_SIZE
     + I64_SIZE
     + I64_SIZE
+    + U8_SIZE * 32
     + U8_SIZE;
 
   pub fn is_active(&self) -> bool {
@@ -50,7 +56,7 @@ impl Order {
   }
 
   pub fn is_whitelist(&self, proof: Vec<[u8; 32]>, taker: Pubkey) -> bool {
-    if self.whitelist.len() == 0 {
+    if self.whitelist == NULL_WHITELIST {
       return true;
     }
     let leaf = keccak::hashv(&[&taker.to_bytes()]).0;
