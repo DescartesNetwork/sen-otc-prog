@@ -25,10 +25,10 @@ describe('sen-otc-prog', () => {
 
   const program = workspace.SenOtcProg as Program<SenOtcProg>
   const spl = Spl.token()
-  const bidToken = new web3.Keypair()
-  let bidTokenAccount: web3.PublicKey
-  const askToken = new web3.Keypair()
-  let askTokenAccount: web3.PublicKey
+  const aToken = new web3.Keypair()
+  let aTokenAccount: web3.PublicKey
+  const bToken = new web3.Keypair()
+  let bTokenAccount: web3.PublicKey
 
   const order = new web3.Keypair()
   let treasurer: web3.PublicKey
@@ -36,31 +36,31 @@ describe('sen-otc-prog', () => {
 
   before(async () => {
     // Init a mint
-    await initializeMint(9, bidToken, spl)
-    await initializeMint(9, askToken, spl)
+    await initializeMint(9, aToken, spl)
+    await initializeMint(9, bToken, spl)
     // Derive token account
-    bidTokenAccount = await utils.token.associatedAddress({
-      mint: bidToken.publicKey,
+    aTokenAccount = await utils.token.associatedAddress({
+      mint: aToken.publicKey,
       owner: provider.wallet.publicKey,
     })
     await initializeAccount(
-      bidTokenAccount,
-      bidToken.publicKey,
+      aTokenAccount,
+      aToken.publicKey,
       provider.wallet.publicKey,
       provider,
     )
-    await mintTo(new BN(10 ** 10), bidToken.publicKey, bidTokenAccount, spl)
-    askTokenAccount = await utils.token.associatedAddress({
-      mint: askToken.publicKey,
+    await mintTo(new BN(10 ** 10), aToken.publicKey, aTokenAccount, spl)
+    bTokenAccount = await utils.token.associatedAddress({
+      mint: bToken.publicKey,
       owner: provider.wallet.publicKey,
     })
     await initializeAccount(
-      askTokenAccount,
-      askToken.publicKey,
+      bTokenAccount,
+      bToken.publicKey,
       provider.wallet.publicKey,
       provider,
     )
-    await mintTo(new BN(10 ** 10), askToken.publicKey, askTokenAccount, spl)
+    await mintTo(new BN(10 ** 10), bToken.publicKey, bTokenAccount, spl)
     // Derive treasury & treasurer
     const [treasurerPublicKey] = await web3.PublicKey.findProgramAddress(
       [Buffer.from('treasurer'), order.publicKey.toBuffer()],
@@ -68,7 +68,7 @@ describe('sen-otc-prog', () => {
     )
     treasurer = treasurerPublicKey
     treasury = await utils.token.associatedAddress({
-      mint: bidToken.publicKey,
+      mint: aToken.publicKey,
       owner: treasurer,
     })
   })
@@ -88,9 +88,9 @@ describe('sen-otc-prog', () => {
       .accounts({
         authority: provider.wallet.publicKey,
         order: order.publicKey,
-        bidToken: bidToken.publicKey,
-        askToken: askToken.publicKey,
-        srcBidAccount: bidTokenAccount,
+        aToken: aToken.publicKey,
+        bToken: bToken.publicKey,
+        srcAAccount: aTokenAccount,
         treasury,
         treasurer,
         systemProgram: web3.SystemProgram.programId,
