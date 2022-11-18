@@ -10,6 +10,8 @@ pub enum ErrorCode {
   InvalidAmount,
   #[msg("The order isn't started yet")]
   NotStartedOrder,
+  #[msg("The proposal isn't ended yet")]
+  NotEndedProposal,
   #[msg("The order had been ended")]
   EndedOrder,
   #[msg("The order is paused")]
