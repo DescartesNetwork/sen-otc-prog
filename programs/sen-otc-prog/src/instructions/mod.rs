@@ -6,3 +6,5 @@ pub mod pause;
 pub use pause::*;
 pub mod resume;
 pub use resume::*;
+pub mod stop;
+pub use stop::*;

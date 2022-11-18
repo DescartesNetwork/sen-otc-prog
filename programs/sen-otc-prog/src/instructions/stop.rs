@@ -16,15 +16,14 @@ pub struct StopEvent {
 pub struct Stop<'info> {
   #[account(mut)]
   pub authority: Signer<'info>,
-  #[account(mut, has_one = authority, has_one = bid_token, has_one = ask_token)]
+  #[account(mut, has_one = authority, has_one = bid_token)]
   pub order: Account<'info, Order>,
   pub bid_token: Box<Account<'info, token::Mint>>,
-  pub ask_token: Box<Account<'info, token::Mint>>,
   #[account(
     init_if_needed,
-    payer = taker,
-    associated_token::mint = ask_token,
-    associated_token::authority = taker
+    payer = authority,
+    associated_token::mint = bid_token,
+    associated_token::authority = authority
   )]
   pub dst_bid_account: Box<Account<'info, token::TokenAccount>>,
   #[account(mut)]
@@ -39,7 +38,7 @@ pub struct Stop<'info> {
   pub rent: Sysvar<'info, Rent>,
 }
 
-pub fn exec(ctx: Context<TakeOrder>) -> Result<()> {
+pub fn exec(ctx: Context<Stop>) -> Result<()> {
   let order = &mut ctx.accounts.order;
 
   let seeds: &[&[&[u8]]] = &[&[
@@ -63,10 +62,6 @@ pub fn exec(ctx: Context<TakeOrder>) -> Result<()> {
 
   // Update order data
   order.remaining_amount = 0;
-  order.filled_amount = order
-    .filled_amount
-    .checked_add(ask_amount)
-    .ok_or(ErrorCode::Overflow)?;
   // Update end date if the authority stop the order before the plan
   let current_date = current_timestamp().ok_or(ErrorCode::InvalidCurrentDate)?;
   if order.end_date > current_date {

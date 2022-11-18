@@ -42,4 +42,8 @@ pub mod sen_otc_prog {
   pub fn resume(ctx: Context<Resume>) -> Result<()> {
     resume::exec(ctx)
   }
+
+  pub fn stop(ctx: Context<Stop>) -> Result<()> {
+    stop::exec(ctx)
+  }
 }
