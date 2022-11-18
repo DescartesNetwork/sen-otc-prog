@@ -1,5 +1,5 @@
 use crate::constants::*;
-use anchor_lang::prelude::*;
+use anchor_lang::{prelude::*, solana_program::keccak};
 use num_traits::ToPrimitive;
 
 ///
@@ -49,11 +49,20 @@ impl Order {
     self.state == OrderState::Initialized
   }
 
-  pub fn is_white(&self, proof: Vec<[u8; 32]>) -> bool {
+  pub fn is_whitelist(&self, proof: Vec<[u8; 32]>, taker: Pubkey) -> bool {
     if self.whitelist.len() == 0 {
       return true;
     }
-    false
+    let leaf = keccak::hashv(&[&taker.to_bytes()]).0;
+    let mut child = leaf;
+    for sibling in proof.into_iter() {
+      child = if child <= sibling {
+        keccak::hashv(&[&child, &sibling]).0
+      } else {
+        keccak::hashv(&[&sibling, &child]).0
+      }
+    }
+    child == self.whitelist
   }
 
   pub fn compute_ask_amount(&self, bid_amount: u64) -> Option<u64> {

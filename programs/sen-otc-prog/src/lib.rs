@@ -34,7 +34,12 @@ pub mod sen_otc_prog {
   pub fn take_order(ctx: Context<TakeOrder>, bid_amount: u64, proof: Vec<[u8; 32]>) -> Result<()> {
     take_order::exec(ctx, bid_amount, proof)
   }
-}
 
-#[derive(Accounts)]
-pub struct Initialize {}
+  pub fn pause(ctx: Context<Pause>) -> Result<()> {
+    pause::exec(ctx)
+  }
+
+  pub fn resume(ctx: Context<Resume>) -> Result<()> {
+    resume::exec(ctx)
+  }
+}

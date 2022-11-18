@@ -75,7 +75,7 @@ pub fn exec(ctx: Context<TakeOrder>, bid_amount: u64, proof: Vec<[u8; 32]>) -> R
     return err!(ErrorCode::EndedOrder);
   }
   // Validate the whitelist
-  if !order.is_white(proof) {
+  if !order.is_whitelist(proof, ctx.accounts.taker.key()) {
     return err!(ErrorCode::NotInWhitelist);
   }
 
