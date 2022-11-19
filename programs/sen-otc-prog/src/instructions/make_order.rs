@@ -14,6 +14,7 @@ pub struct MakeOrderEvent {
   pub b: u64,
   pub maker_fee: u32,
   pub taker_fee: u32,
+  pub taxman: Pubkey,
   pub start_date: i64,
   pub end_date: i64,
   pub whitelist: [u8; 32],
@@ -25,8 +26,8 @@ pub struct MakeOrder<'info> {
   pub authority: Signer<'info>,
   #[account(init, payer = authority, space = Order::LEN)]
   pub order: Account<'info, Order>,
-  pub a_token: Account<'info, token::Mint>,
-  pub b_token: Account<'info, token::Mint>,
+  pub a_token: Box<Account<'info, token::Mint>>,
+  pub b_token: Box<Account<'info, token::Mint>>,
   #[account(mut)]
   pub src_a_account: Account<'info, token::TokenAccount>,
   #[account(
@@ -35,10 +36,12 @@ pub struct MakeOrder<'info> {
     associated_token::mint = a_token,
     associated_token::authority = treasurer
   )]
-  pub treasury: Account<'info, token::TokenAccount>,
+  pub treasury: Box<Account<'info, token::TokenAccount>>,
   #[account(seeds = [b"treasurer", &order.key().to_bytes()], bump)]
   /// CHECK: Just a pure account
   pub treasurer: AccountInfo<'info>,
+  /// CHECK: Just a pure account
+  pub taxman: AccountInfo<'info>,
   // programs
   pub system_program: Program<'info, System>,
   pub token_program: Program<'info, token::Token>,
@@ -57,9 +60,12 @@ pub fn exec(
   whitelist: [u8; 32],
 ) -> Result<()> {
   let order = &mut ctx.accounts.order;
-  // Validate bid amount
+  // Validate a/b amount
   if a <= 0 || b <= 0 {
     return err!(ErrorCode::InvalidAmount);
+  }
+  if ctx.accounts.a_token.key() == ctx.accounts.b_token.key() {
+    return err!(ErrorCode::InvalidToken);
   }
   // Validate datetime
   if start_date < current_timestamp().ok_or(ErrorCode::InvalidCurrentDate)? {
@@ -89,6 +95,7 @@ pub fn exec(
   order.filled_amount = 0;
   order.maker_fee = maker_fee;
   order.taker_fee = taker_fee;
+  order.taxman = ctx.accounts.taxman.key();
   order.start_date = start_date;
   order.end_date = end_date;
   order.whitelist = whitelist;
@@ -103,6 +110,7 @@ pub fn exec(
     b: order.b,
     maker_fee: order.maker_fee,
     taker_fee: order.taker_fee,
+    taxman: order.taxman,
     start_date: order.start_date,
     end_date: order.end_date,
     whitelist: order.whitelist

@@ -20,7 +20,13 @@ pub struct TakeOrder<'info> {
   pub taker: Signer<'info>,
   /// CHECK: Just a pure account
   pub authority: AccountInfo<'info>,
-  #[account(mut, has_one = authority, has_one = a_token, has_one = b_token)]
+  #[account(
+    mut,
+    has_one = authority,
+    has_one = a_token,
+    has_one = b_token,
+    // has_one = taxman
+  )]
   pub order: Account<'info, Order>,
   pub a_token: Box<Account<'info, token::Mint>>,
   pub b_token: Box<Account<'info, token::Mint>>,
@@ -117,15 +123,17 @@ pub fn exec(ctx: Context<TakeOrder>, y: u64, proof: Vec<[u8; 32]>) -> Result<()>
   );
   token::transfer(transfer_y_ctx, y_after_fee)?;
   // Transfer maker fee
-  let transfer_maker_fee_ctx = CpiContext::new(
-    ctx.accounts.token_program.to_account_info(),
-    token::Transfer {
-      from: ctx.accounts.src_b_account.to_account_info(),
-      to: ctx.accounts.maker_fee_account.to_account_info(),
-      authority: ctx.accounts.taker.to_account_info(),
-    },
-  );
-  token::transfer(transfer_maker_fee_ctx, maker_fee)?;
+  if maker_fee > 0 {
+    let transfer_maker_fee_ctx = CpiContext::new(
+      ctx.accounts.token_program.to_account_info(),
+      token::Transfer {
+        from: ctx.accounts.src_b_account.to_account_info(),
+        to: ctx.accounts.maker_fee_account.to_account_info(),
+        authority: ctx.accounts.taker.to_account_info(),
+      },
+    );
+    token::transfer(transfer_maker_fee_ctx, maker_fee)?;
+  }
   // Transfer x
   let transfer_x_ctx = CpiContext::new_with_signer(
     ctx.accounts.token_program.to_account_info(),
@@ -138,16 +146,18 @@ pub fn exec(ctx: Context<TakeOrder>, y: u64, proof: Vec<[u8; 32]>) -> Result<()>
   );
   token::transfer(transfer_x_ctx, x_after_fee)?;
   // Transfer taker fee
-  let transfer_taker_fee_ctx = CpiContext::new_with_signer(
-    ctx.accounts.token_program.to_account_info(),
-    token::Transfer {
-      from: ctx.accounts.treasury.to_account_info(),
-      to: ctx.accounts.taker_fee_account.to_account_info(),
-      authority: ctx.accounts.treasurer.to_account_info(),
-    },
-    seeds,
-  );
-  token::transfer(transfer_taker_fee_ctx, taker_fee)?;
+  if taker_fee > 0 {
+    let transfer_taker_fee_ctx = CpiContext::new_with_signer(
+      ctx.accounts.token_program.to_account_info(),
+      token::Transfer {
+        from: ctx.accounts.treasury.to_account_info(),
+        to: ctx.accounts.taker_fee_account.to_account_info(),
+        authority: ctx.accounts.treasurer.to_account_info(),
+      },
+      seeds,
+    );
+    token::transfer(transfer_taker_fee_ctx, taker_fee)?;
+  }
 
   // Update order data
   order.remaining_amount = order

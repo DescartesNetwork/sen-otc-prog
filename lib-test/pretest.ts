@@ -1,24 +1,11 @@
 import {
-  web3,
   AnchorProvider,
   Program,
   SplToken,
-  BN,
   utils,
+  web3,
+  BN,
 } from '@project-serum/anchor'
-
-export const asyncWait = (s: number) =>
-  new Promise((resolve) => setTimeout(resolve, s * 1000))
-
-export const getCurrentTimestamp = async (
-  connection: web3.Connection,
-): Promise<number> => {
-  const { data } =
-    (await connection.getAccountInfo(web3.SYSVAR_CLOCK_PUBKEY)) || {}
-  if (!data) throw new Error('Cannot read clock data')
-  const bn = new BN(data.subarray(32, 40), 'le')
-  return bn.toNumber()
-}
 
 export const initializeMint = async (
   decimals: number,
@@ -44,8 +31,8 @@ export const initializeMint = async (
 }
 
 export const initializeAccount = async (
-  tokenAccount: web3.PublicKey,
-  token: web3.PublicKey,
+  associatedTokenAddress: string,
+  tokenAddress: string,
   authority: web3.PublicKey,
   provider: AnchorProvider,
 ) => {
@@ -57,7 +44,7 @@ export const initializeAccount = async (
         isWritable: true,
       },
       {
-        pubkey: tokenAccount,
+        pubkey: new web3.PublicKey(associatedTokenAddress),
         isSigner: false,
         isWritable: true,
       },
@@ -67,7 +54,7 @@ export const initializeAccount = async (
         isWritable: false,
       },
       {
-        pubkey: token,
+        pubkey: new web3.PublicKey(tokenAddress),
         isSigner: false,
         isWritable: false,
       },
@@ -111,16 +98,5 @@ export const mintTo = async (
     .rpc()
 }
 
-export const transferLamports = async (
-  lamports: number,
-  dstAddress: string,
-  provider: AnchorProvider,
-) => {
-  const ix = web3.SystemProgram.transfer({
-    fromPubkey: provider.wallet.publicKey,
-    toPubkey: new web3.PublicKey(dstAddress),
-    lamports: Number(lamports),
-  })
-  const tx = new web3.Transaction().add(ix)
-  return await provider.sendAndConfirm(tx)
-}
+export const asyncWait = (s: number) =>
+  new Promise((resolve) => setTimeout(resolve, s))

@@ -10,7 +10,7 @@ pub use errors::*;
 pub use instructions::*;
 pub use schema::*;
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("otcesiq3oV6cDJA2fipi8NjSDyQ9LRkw2okR7kqPamt");
 
 #[program]
 pub mod sen_otc_prog {

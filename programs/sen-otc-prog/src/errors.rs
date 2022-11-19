@@ -8,6 +8,8 @@ pub enum ErrorCode {
   NoBump,
   #[msg("Invalid amount")]
   InvalidAmount,
+  #[msg("Invalid token")]
+  InvalidToken,
   #[msg("The order isn't started yet")]
   NotStartedOrder,
   #[msg("The proposal isn't ended yet")]

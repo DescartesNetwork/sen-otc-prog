@@ -8,5 +8,5 @@ pub const I64_SIZE: usize = 8;
 pub const BOOL_SIZE: usize = 1;
 pub const VECTOR_OVERHEAD_SIZE: usize = 4;
 
-pub const DECIMALS: u64 = 1_000_000_000;
+pub const DECIMALS: u32 = 1_000_000;
 pub const NULL_WHITELIST: [u8; 32] = [0; 32];
