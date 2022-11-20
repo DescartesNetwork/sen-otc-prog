@@ -30,8 +30,10 @@ jobs:
           solana --version
       - name: Install dependencies
         run: |
-          npm i -g @project-serum/anchor-cli
-          npm install
+          cargo install --git https://github.com/project-serum/anchor avm --locked --force
+          avm install latest
+          avm use latest
+          yarn install
       - name: Build the program and library
         run: |
           anchor build
