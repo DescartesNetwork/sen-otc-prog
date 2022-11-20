@@ -1,5 +1,5 @@
 import bs58 from 'bs58'
-import { BN, BorshAccountsCoder, web3 } from '@project-serum/anchor'
+import { BorshAccountsCoder, web3 } from '@project-serum/anchor'
 
 import { IDL } from '../target/types/sen_otc_prog'
 import { FeeOptions } from './types'

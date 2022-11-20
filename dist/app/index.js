@@ -22,4 +22,5 @@ __exportStar(require("./constant"), exports);
 __exportStar(require("./types"), exports);
 __exportStar(require("./utils"), exports);
 __exportStar(require("./core"), exports);
+__exportStar(require("./merkleWhitelist"), exports);
 exports.default = core_1.default;

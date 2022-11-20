@@ -21,8 +21,6 @@ pub enum ErrorCode {
   #[msg("Cannot get current date")]
   InvalidCurrentDate,
   #[msg("Start date need to be greater than or equal to current date")]
-  InvalidStartDate,
-  #[msg("End date need to be greater than start date and current date")]
   InvalidEndDate,
   #[msg("Not in whitelist")]
   NotInWhitelist,

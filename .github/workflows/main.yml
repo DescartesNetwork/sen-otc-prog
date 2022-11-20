@@ -2,7 +2,7 @@ name: Automatic Deployment
 
 on:
   push:
-    branches: [disabled_master]
+    branches: [master]
 
 jobs:
   build:

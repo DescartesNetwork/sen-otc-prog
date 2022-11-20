@@ -85,7 +85,7 @@ declare class Otc {
     takeOrder: ({ orderAddress, amount, proof, }: {
         orderAddress: string;
         amount: BN;
-        proof: number[][];
+        proof: Buffer[] | Uint8Array[] | number[][];
     }, sendAndConfirm?: boolean) => Promise<{
         tx: web3.Transaction;
         txId: string;

@@ -223,7 +223,11 @@ class Otc {
       orderAddress,
       amount,
       proof = [],
-    }: { orderAddress: string; amount: BN; proof: number[][] },
+    }: {
+      orderAddress: string
+      amount: BN
+      proof: Buffer[] | Uint8Array[] | number[][]
+    },
     sendAndConfirm = true,
   ) => {
     if (!isAddress(orderAddress)) throw new Error('Invalid order address')

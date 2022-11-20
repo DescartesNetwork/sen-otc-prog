@@ -10,7 +10,14 @@ import {
 import { program as getSplProgram } from '@project-serum/anchor/dist/cjs/spl/token'
 import { expect } from 'chai'
 
-import Otc, { OrderData, OrderState, DEFAULT_OTC_PROGRAM_ID } from '../app'
+import Otc, {
+  OrderData,
+  OrderState,
+  DEFAULT_OTC_PROGRAM_ID,
+  isAddress,
+  MerkleWhitelist,
+  OrderStates,
+} from '../app'
 import { asyncWait, initializeAccount, initializeMint } from './pretest'
 
 const PRIV_KEY_FOR_TEST_ONLY = Buffer.from([
@@ -20,6 +27,8 @@ const PRIV_KEY_FOR_TEST_ONLY = Buffer.from([
   25, 127, 150, 87, 141, 234, 34, 239, 139, 107, 155, 32, 47, 199,
 ])
 const SUPPLY = new BN(10 ** 9)
+const AMOUNT = new BN(10 ** 9)
+const DURATION = new BN(5)
 
 describe('@sentre/otc', function () {
   const wallet = new Wallet(web3.Keypair.fromSecretKey(PRIV_KEY_FOR_TEST_ONLY))
@@ -30,12 +39,24 @@ describe('@sentre/otc', function () {
     aTokenAddress: string,
     aTokenAccountAddress: string,
     bTokenAddress: string,
-    bTokenAccountAddress: string
+    bTokenAccountAddress: string,
+    merkleWhitelist: MerkleWhitelist
 
   before(async () => {
     const { program } = new Otc(wallet)
     const provider = program.provider as AnchorProvider
     splProgram = getSplProgram(provider)
+    // Merkle Whitelist
+    merkleWhitelist = new MerkleWhitelist([
+      web3.Keypair.generate().publicKey,
+      web3.Keypair.generate().publicKey,
+      web3.Keypair.generate().publicKey,
+      web3.Keypair.generate().publicKey,
+      web3.Keypair.generate().publicKey,
+      wallet.publicKey,
+      web3.Keypair.generate().publicKey,
+      web3.Keypair.generate().publicKey,
+    ])
     // Init A token
     const aToken = web3.Keypair.generate()
     aTokenAddress = aToken.publicKey.toBase58()
@@ -46,6 +67,12 @@ describe('@sentre/otc', function () {
         mint: new web3.PublicKey(aTokenAddress),
       })
     ).toBase58()
+    await initializeAccount(
+      aTokenAccountAddress,
+      aTokenAddress,
+      wallet.publicKey,
+      provider,
+    )
     await splProgram.methods
       .mintTo(SUPPLY)
       .accounts({
@@ -64,6 +91,12 @@ describe('@sentre/otc', function () {
         mint: new web3.PublicKey(bTokenAddress),
       })
     ).toBase58()
+    await initializeAccount(
+      bTokenAccountAddress,
+      bTokenAddress,
+      wallet.publicKey,
+      provider,
+    )
     await splProgram.methods
       .mintTo(SUPPLY)
       .accounts({
@@ -84,8 +117,67 @@ describe('@sentre/otc', function () {
     const lamports = await connection.getBalance(wallet.publicKey)
     if (lamports < 10 * web3.LAMPORTS_PER_SOL)
       await connection.requestAirdrop(wallet.publicKey, web3.LAMPORTS_PER_SOL)
-    // Current Unix Timestamp
+  })
+
+  it('make order', async () => {
     const currentTime = await otc.getCurrentUnixTimestamp()
-    console.log(currentTime)
+    const { txId, orderAddress: _orderAddress } = await otc.makeOrder({
+      aTokenAddress,
+      aTokenAmount: AMOUNT,
+      bTokenAddress,
+      bTokenAmount: AMOUNT,
+      startDate: new BN(currentTime),
+      endDate: new BN(currentTime).add(DURATION),
+      whitelist: [...merkleWhitelist.deriveMerkleRoot()],
+    })
+    orderAddress = _orderAddress
+    expect(txId).to.be.an('string')
+    expect(isAddress(orderAddress)).to.be.true
+  })
+
+  it('get order data', async () => {
+    const { startDate, endDate, state, whitelist } = await otc.getOrderData(
+      orderAddress,
+    )
+    expect(endDate.sub(startDate).eq(DURATION)).to.be.true
+    expect(state).to.deep.eq({ initialized: {} })
+    expect(whitelist).to.deep.eq([...merkleWhitelist.deriveMerkleRoot()])
+  })
+
+  it('take order', async () => {
+    const { txId } = await otc.takeOrder({
+      orderAddress,
+      amount: AMOUNT,
+      proof: merkleWhitelist.deriveProof(wallet.publicKey),
+    })
+    expect(txId).to.be.an('string')
+  })
+
+  it('validate order data', async () => {
+    const { remainingAmount, filledAmount } = await otc.getOrderData(
+      orderAddress,
+    )
+    expect(new BN(0).eq(remainingAmount)).to.be.true
+    expect(AMOUNT.eq(filledAmount)).to.be.true
+  })
+
+  it('pause order', async () => {
+    await otc.pause({ orderAddress })
+    const { state } = await otc.getOrderData(orderAddress)
+    expect(state).to.deep.eq(OrderStates.Paused)
+  })
+
+  it('resume order', async () => {
+    await otc.resume({ orderAddress })
+    const { state } = await otc.getOrderData(orderAddress)
+    expect(state).to.deep.eq(OrderStates.Initialized)
+  })
+
+  it('stop order', async () => {
+    await otc.stop({ orderAddress })
+    const { endDate, remainingAmount } = await otc.getOrderData(orderAddress)
+    const currentDate = await otc.getCurrentUnixTimestamp()
+    expect(new BN(currentDate).gte(endDate)).to.be.true
+    expect(remainingAmount.eq(new BN(0))).to.be.true
   })
 })

@@ -11,14 +11,16 @@ import {
 import { expect } from 'chai'
 import { SenOtcProg } from '../target/types/sen_otc_prog'
 import {
+  asyncWait,
   getCurrentTimestamp,
   initializeAccount,
   initializeMint,
   mintTo,
 } from './utils'
-import { NULL_WHITELIST, decimals, A, B, a, b, fee } from './configs'
+import { NULL_WHITELIST, decimals, A, B, a, b, x, y, DECIMALS } from './configs'
+import { MerkleWhitelist } from '../app'
 
-describe('admin', () => {
+describe('whitelist', () => {
   // Configure the client to use the local cluster.
   const provider = AnchorProvider.env()
   setProvider(provider)
@@ -37,6 +39,13 @@ describe('admin', () => {
   const taxman = new web3.Keypair()
   let makerFeeAccount: web3.PublicKey
   let takerFeeAccount: web3.PublicKey
+
+  const merkleWhitelist = new MerkleWhitelist([
+    web3.Keypair.generate().publicKey,
+    web3.Keypair.generate().publicKey,
+    web3.Keypair.generate().publicKey,
+    provider.wallet.publicKey,
+  ])
 
   before(async () => {
     // Init a mint
@@ -88,15 +97,16 @@ describe('admin', () => {
 
   it('make order', async () => {
     const currentDate = await getCurrentTimestamp(provider.connection)
+    const merkleRoot = merkleWhitelist.deriveMerkleRoot()
     const txId = await program.methods
       .makeOrder(
         a,
         b,
         0,
-        fee,
+        0,
         new BN(currentDate + 5),
         new BN(currentDate + 10),
-        NULL_WHITELIST,
+        [...merkleRoot],
       )
       .accounts({
         authority: provider.wallet.publicKey,
@@ -123,54 +133,33 @@ describe('admin', () => {
       await program.account.order.fetch(order.publicKey)
     expect(endDate.sub(startDate).eq(new BN(5))).to.be.true
     expect(state).to.deep.eq({ initialized: {} })
-    expect(whitelist).to.deep.eq(NULL_WHITELIST)
+    expect(whitelist).to.deep.eq([...merkleWhitelist.deriveMerkleRoot()])
     // Check A token account
     const { amount: aAmount } = await spl.account.token.fetch(aTokenAccount)
     expect(aAmount.eq(new BN(0))).to.be.true
   })
 
-  it('paused', async () => {
+  it('take order', async () => {
+    const proof = merkleWhitelist.deriveProof(provider.wallet.publicKey)
+    // Wait for starting
+    await asyncWait(5)
+    // Take the order
     const txId = await program.methods
-      .pause()
+      .takeOrder(y, proof)
       .accounts({
-        authority: provider.wallet.publicKey,
-        order: order.publicKey,
-      })
-      .rpc()
-    expect(txId).to.be.an('string')
-  })
-
-  it('validate order data: pause', async () => {
-    const { state } = await program.account.order.fetch(order.publicKey)
-    expect(state).to.deep.eq({ paused: {} })
-  })
-
-  it('resume', async () => {
-    const txId = await program.methods
-      .resume()
-      .accounts({
-        authority: provider.wallet.publicKey,
-        order: order.publicKey,
-      })
-      .rpc()
-    expect(txId).to.be.an('string')
-  })
-
-  it('validate order data: resume', async () => {
-    const { state } = await program.account.order.fetch(order.publicKey)
-    expect(state).to.deep.eq({ initialized: {} })
-  })
-
-  it('stop', async () => {
-    const txId = await program.methods
-      .stop()
-      .accounts({
+        taker: provider.wallet.publicKey,
         authority: provider.wallet.publicKey,
         order: order.publicKey,
         aToken: aToken.publicKey,
+        bToken: bToken.publicKey,
+        srcBAccount: bTokenAccount,
+        dstBAccount: bTokenAccount,
         dstAAccount: aTokenAccount,
         treasury,
         treasurer,
+        taxman: taxman.publicKey,
+        makerFeeAccount,
+        takerFeeAccount,
         systemProgram: web3.SystemProgram.programId,
         tokenProgram: utils.token.TOKEN_PROGRAM_ID,
         associatedTokenProgram: utils.token.ASSOCIATED_PROGRAM_ID,
@@ -180,12 +169,21 @@ describe('admin', () => {
     expect(txId).to.be.an('string')
   })
 
-  it('validate order data: stop', async () => {
-    const { endDate, remainingAmount } = await program.account.order.fetch(
+  it('validate order data', async () => {
+    // Check internal order state
+    const { remainingAmount, filledAmount } = await program.account.order.fetch(
       order.publicKey,
     )
-    const currentDate = await getCurrentTimestamp(provider.connection)
-    expect(new BN(currentDate).gte(endDate)).to.be.true
-    expect(remainingAmount.eq(new BN(0))).to.be.true
+    expect(a.sub(x).eq(remainingAmount)).to.be.true
+    expect(y.eq(filledAmount)).to.be.true
+    // Check treasury
+    const { amount: treasuryAmount } = await spl.account.token.fetch(treasury)
+    expect(treasuryAmount.eq(remainingAmount)).to.be.true
+    // Check A token account
+    const { amount: aAmount } = await spl.account.token.fetch(aTokenAccount)
+    expect(x.eq(aAmount)).to.be.true
+    // Check B token account
+    const { amount: bAmount } = await spl.account.token.fetch(bTokenAccount)
+    expect(b.eq(bAmount)).to.be.true
   })
 })

@@ -6,7 +6,9 @@ import { SenOtcProg } from '../target/types/sen_otc_prog'
 
 export type AnchorWallet = Wallet
 
-export type OrderData = IdlAccounts<SenOtcProg>['order']
+export type OrderData = Omit<IdlAccounts<SenOtcProg>['order'], 'state'> & {
+  state: OrderState
+}
 
 export type OrderState = IdlTypes<SenOtcProg>['OrderState']
 export const OrderStates: Record<string, OrderState> = {

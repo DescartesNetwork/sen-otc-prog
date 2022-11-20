@@ -68,10 +68,9 @@ pub fn exec(
     return err!(ErrorCode::InvalidToken);
   }
   // Validate datetime
-  if start_date < current_timestamp().ok_or(ErrorCode::InvalidCurrentDate)? {
-    return err!(ErrorCode::InvalidStartDate);
-  }
-  if end_date <= start_date {
+  if end_date <= start_date
+    || end_date <= current_timestamp().ok_or(ErrorCode::InvalidCurrentDate)?
+  {
     return err!(ErrorCode::InvalidEndDate);
   }
 

@@ -4,7 +4,9 @@ import { TypeDef } from '@project-serum/anchor/dist/cjs/program/namespace/types'
 import { Wallet } from '@project-serum/anchor/dist/cjs/provider';
 import { SenOtcProg } from '../target/types/sen_otc_prog';
 export type AnchorWallet = Wallet;
-export type OrderData = IdlAccounts<SenOtcProg>['order'];
+export type OrderData = Omit<IdlAccounts<SenOtcProg>['order'], 'state'> & {
+    state: OrderState;
+};
 export type OrderState = IdlTypes<SenOtcProg>['OrderState'];
 export declare const OrderStates: Record<string, OrderState>;
 type TypeDefDictionary<T extends IdlEvent[], Defined> = {
