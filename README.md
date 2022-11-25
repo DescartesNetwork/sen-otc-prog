@@ -1,6 +1,6 @@
 # OTC
 
-## !IMPORTANT
+## IMPORTANT!
 
 In this program, we will use strict conventions that
 
@@ -31,4 +31,8 @@ import { Wallet, web3 } from '@project-serum/anchor'
 
 const wallet = new Wallet(web3.Keypair.generate())
 const otc = new Otc(wallet, DEFAULT_RPC_ENDPOINT, DEFAULT_OTC_PROGRAM_ID)
+
+const order = await otc.getOrderData(
+  '9EKdURf9kaR8yeu9sWSiGQaeMz59zfigQe4mcfsGnLW8',
+)
 ```

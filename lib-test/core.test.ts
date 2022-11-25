@@ -16,7 +16,7 @@ import Otc, {
   MerkleWhitelist,
   OrderStates,
 } from '../app'
-import { asyncWait, initializeAccount, initializeMint } from './pretest'
+import { initializeAccount, initializeMint } from './pretest'
 
 const PRIV_KEY_FOR_TEST_ONLY = Buffer.from([
   2, 178, 226, 192, 204, 173, 232, 36, 247, 215, 203, 12, 177, 251, 254, 243,

@@ -1,5 +1,4 @@
 import { web3, Program, utils, BN, AnchorProvider } from '@project-serum/anchor'
-import { SenOtcProg } from '../target/types/sen_otc_prog'
 
 import {
   DEFAULT_RPC_ENDPOINT,
@@ -8,13 +7,19 @@ import {
   FEE_OPTIONS,
   NULL_WHITELIST,
 } from './constant'
-import { AnchorWallet, FeeOptions, IdlEvents, OrderData } from './types'
+import {
+  SenOtcIdl,
+  AnchorWallet,
+  FeeOptions,
+  SenOtcEvents,
+  OrderData,
+} from './types'
 import { isAddress } from './utils'
 
 class Otc {
   private _connection: web3.Connection
   private _provider: AnchorProvider
-  readonly program: Program<SenOtcProg>
+  readonly program: Program<SenOtcIdl>
 
   constructor(
     wallet: AnchorWallet,
@@ -29,7 +34,7 @@ class Otc {
       commitment: 'confirmed',
     })
     // Public
-    this.program = new Program<SenOtcProg>(
+    this.program = new Program<SenOtcIdl>(
       DEFAULT_OTC_IDL,
       programId,
       this._provider,
@@ -49,13 +54,13 @@ class Otc {
    * @param callback Event handler
    * @returns Listener id
    */
-  addListener = <T extends keyof IdlEvents<SenOtcProg>>(
+  addListener = <T extends keyof SenOtcEvents>(
     eventName: T,
-    callback: (data: IdlEvents<SenOtcProg>[T]) => void,
+    callback: (data: SenOtcEvents[T]) => void,
   ) => {
     return this.program.addEventListener(
       eventName as string,
-      (data: IdlEvents<SenOtcProg>[T]) => callback(data),
+      (data: SenOtcEvents[T]) => callback(data),
     )
   }
 
@@ -68,7 +73,7 @@ class Otc {
     try {
       await this.program.removeEventListener(listenerId)
     } catch (er: any) {
-      console.warn(er)
+      console.warn(er.message)
     }
   }
 
@@ -101,7 +106,7 @@ class Otc {
    * @returns Order readable data.
    */
   getOrderData = async (orderAddress: string): Promise<OrderData> => {
-    return this.program.account.order.fetch(orderAddress) as any
+    return this.program.account.order.fetch(orderAddress)
   }
 
   /**
