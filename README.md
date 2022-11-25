@@ -14,11 +14,21 @@ In this program, we will use strict conventions that
 ## Installation
 
 ```bash
-npm i @sentre/otc-sdk
+npm i @sentre/otc
 ```
 
 or,
 
 ```bash
-yarn add @sentre/otc-sdk
+yarn add @sentre/otc
+```
+
+## Usage
+
+```js
+import Otc, { DEFAULT_OTC_PROGRAM_ID, DEFAULT_RPC_ENDPOINT } from '@sentre/otc'
+import { Wallet, web3 } from '@project-serum/anchor'
+
+const wallet = new Wallet(web3.Keypair.generate())
+const otc = new Otc(wallet, DEFAULT_RPC_ENDPOINT, DEFAULT_OTC_PROGRAM_ID)
 ```

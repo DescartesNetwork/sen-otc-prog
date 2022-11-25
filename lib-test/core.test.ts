@@ -11,8 +11,6 @@ import { program as getSplProgram } from '@project-serum/anchor/dist/cjs/spl/tok
 import { expect } from 'chai'
 
 import Otc, {
-  OrderData,
-  OrderState,
   DEFAULT_OTC_PROGRAM_ID,
   isAddress,
   MerkleWhitelist,
