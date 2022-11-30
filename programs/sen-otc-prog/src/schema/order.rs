@@ -75,8 +75,8 @@ impl Order {
 
   pub fn compute_x(&self, y: u64) -> Option<u64> {
     y.to_u128()?
-      .checked_mul(self.b.to_u128()?)?
-      .checked_div(self.a.to_u128()?)?
+      .checked_mul(self.a.to_u128()?)?
+      .checked_div(self.b.to_u128()?)?
       .to_u64()
   }
 

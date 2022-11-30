@@ -97,6 +97,7 @@ pub fn exec(ctx: Context<TakeOrder>, y: u64, proof: Vec<[u8; 32]>) -> Result<()>
 
   // Compute x
   let x = order.compute_x(y).ok_or(ErrorCode::Overflow)?;
+  msg!("x: {} , y: {}", x, y);
   // Compute maker fee
   let maker_fee = order.compute_maker_fee(y).ok_or(ErrorCode::Overflow)?;
   // Compute taker fee
