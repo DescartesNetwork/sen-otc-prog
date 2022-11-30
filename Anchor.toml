@@ -7,7 +7,7 @@ sen_otc_prog = "otcesiq3oV6cDJA2fipi8NjSDyQ9LRkw2okR7kqPamt"
 url = "https://anchor.projectserum.com"
 
 [provider]
-cluster = "devnet"
+cluster = "localnet"
 wallet = "/Users/tuphan/.config/solana/id.json"
 
 [scripts]

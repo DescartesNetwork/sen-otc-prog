@@ -80,7 +80,13 @@ pub fn exec(ctx: Context<TakeOrder>, y: u64, proof: Vec<[u8; 32]>) -> Result<()>
     return err!(ErrorCode::PausedOrder);
   }
   // Validate bid amount
-  if y <= 0 || y > order.remaining_amount {
+  if y <= 0
+    || y
+      > order
+        .b
+        .checked_sub(order.filled_amount)
+        .ok_or(ErrorCode::InvalidAmount)?
+  {
     return err!(ErrorCode::InvalidAmount);
   }
   // Validate datetime
