@@ -7,7 +7,7 @@
     "build": "yarn clean && tsc",
     "clean": "rm -rf ./dist",
     "predocs": "typedoc --excludePrivate --excludeProtected --includeVersion ./app/index.ts",
-    "docs": "echo otc.sentre.io >> ./docs/CNAME && gh-pages -d docs",
+    "docs": "echo sdk.kylan.so >> ./docs/CNAME && gh-pages -d docs",
     "pretest": "yarn build",
     "test": "mocha --require ts-node/register -t 120000 lib-test/**/*.test.ts"
   },
