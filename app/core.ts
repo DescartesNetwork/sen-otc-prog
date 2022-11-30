@@ -231,7 +231,7 @@ class Otc {
     }: {
       orderAddress: string
       amount: BN
-      proof: Buffer[] | Uint8Array[] | number[][]
+      proof?: Buffer[] | Uint8Array[] | number[][]
     },
     sendAndConfirm = true,
   ) => {
@@ -266,27 +266,25 @@ class Otc {
       mint: aToken,
       owner: taxman,
     })
-    const builder = await this.program.methods
-      .takeOrder(amount, proof)
-      .accounts({
-        taker: this._provider.wallet.publicKey,
-        authority,
-        order,
-        aToken,
-        bToken,
-        srcBAccount,
-        dstBAccount,
-        dstAAccount,
-        treasurer,
-        treasury,
-        taxman,
-        makerFeeAccount,
-        takerFeeAccount,
-        systemProgram: web3.SystemProgram.programId,
-        tokenProgram: utils.token.TOKEN_PROGRAM_ID,
-        associatedTokenProgram: utils.token.ASSOCIATED_PROGRAM_ID,
-        rent: web3.SYSVAR_RENT_PUBKEY,
-      })
+    const builder = this.program.methods.takeOrder(amount, proof).accounts({
+      taker: this._provider.wallet.publicKey,
+      authority,
+      order,
+      aToken,
+      bToken,
+      srcBAccount,
+      dstBAccount,
+      dstAAccount,
+      treasurer,
+      treasury,
+      taxman,
+      makerFeeAccount,
+      takerFeeAccount,
+      systemProgram: web3.SystemProgram.programId,
+      tokenProgram: utils.token.TOKEN_PROGRAM_ID,
+      associatedTokenProgram: utils.token.ASSOCIATED_PROGRAM_ID,
+      rent: web3.SYSVAR_RENT_PUBKEY,
+    })
     const tx = await builder.transaction()
     const txId = sendAndConfirm
       ? await builder.rpc({ commitment: 'confirmed' })
@@ -306,7 +304,7 @@ class Otc {
   ) => {
     if (!isAddress(orderAddress)) throw new Error('Invalid order address')
     const orderPublicKey = new web3.PublicKey(orderAddress)
-    const builder = await this.program.methods.pause().accounts({
+    const builder = this.program.methods.pause().accounts({
       authority: this._provider.wallet.publicKey,
       order: orderPublicKey,
     })
@@ -329,7 +327,7 @@ class Otc {
   ) => {
     if (!isAddress(orderAddress)) throw new Error('Invalid order address')
     const orderPublicKey = new web3.PublicKey(orderAddress)
-    const builder = await this.program.methods.resume().accounts({
+    const builder = this.program.methods.resume().accounts({
       authority: this._provider.wallet.publicKey,
       order: orderPublicKey,
     })
@@ -363,7 +361,7 @@ class Otc {
       mint: aToken,
       owner: treasurerPublicKey,
     })
-    const builder = await this.program.methods.stop().accounts({
+    const builder = this.program.methods.stop().accounts({
       authority: this._provider.wallet.publicKey,
       order: orderPublicKey,
       aToken,
